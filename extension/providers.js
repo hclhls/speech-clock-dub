@@ -178,8 +178,63 @@ const YTD_PROV = (() => {
     },
   };
 
-  const providers = [youtube, udemy];
+  // ---------- Vimeo ----------
+
+  // Vimeo plays every video inside a player.vimeo.com frame (on vimeo.com and on embedding sites alike), so
+  // this adapter runs in that frame. The player's config JSON lists the caption files:
+  // /video/<id>/config -> request.text_tracks[] = { lang, label, kind, url (WebVTT, usually relative) }.
+  const vimeoVideoId = (pathname) => /^\/video\/(\d+)/.exec(pathname)?.[1] ?? null;
+
+  // Prefer a human-made caption or subtitle track over an auto-generated one ("en-x-autogen"), then the first.
+  function pickVimeoTrack(tracks) {
+    const usable = (tracks ?? []).filter((t) => t?.url && (!t.kind || /^(captions|subtitles)$/.test(t.kind)));
+    return usable.find((t) => !/autogen/i.test(t.lang ?? '')) ?? usable[0] ?? null;
+  }
+
+  async function fetchVimeoCaptions() {
+    const id = vimeoVideoId(location.pathname);
+    if (!id) throw new Error('Open a Vimeo video first');
+    // Keep the query string: private and unlisted videos carry their hash in it (?h=...).
+    const res = await fetch(`/video/${id}/config${location.search}`, { credentials: 'include' });
+    if (!res.ok) throw new Error(`Vimeo player config returned HTTP ${res.status}`);
+    const config = await res.json();
+    const track = pickVimeoTrack(config.request?.text_tracks);
+    if (!track) throw new Error('Vimeo lists no captions for this video');
+    const file = await fetch(new URL(track.url, location.href), { credentials: 'include' });
+    if (!file.ok) throw new Error(`Caption file returned HTTP ${file.status}`);
+    const events = parseCaptionFile('captions.vtt', await file.text());
+    if (!events.length) throw new Error('The caption track is empty');
+    return { languageCode: langCode({ language: track.lang }), kind: 'manual', events };
+  }
+
+  const vimeo = {
+    id: 'vimeo',
+    matches: (loc) => loc.hostname === 'player.vimeo.com',
+    findVideo: () => document.querySelector('video'),
+    findPlayer() {
+      const v = document.querySelector('video');
+      return v ? (v.closest('.vp-video-wrapper,.player,[class*="vp-player"]') ?? v.parentElement) : null;
+    },
+    css: '',
+    videoKey: (loc) => loc.pathname,
+    navEvents: [],
+    async fetchCaptions() {
+      const v = document.querySelector('video');
+      if (!v) throw new Error('No <video> element found');
+      try {
+        return await fetchVimeoCaptions();
+      } catch (apiErr) {
+        try {
+          return await fetchTrackCaptions(v);
+        } catch {
+          throw apiErr; // the config error is the more useful one
+        }
+      }
+    },
+  };
+
+  const providers = [youtube, udemy, vimeo];
   const pick = (loc) => providers.find((p) => p.matches(loc)) ?? youtube;
 
-  return { parseCaptionFile, pick, providers, udemyLectureRef, pickUdemyCaption };
+  return { parseCaptionFile, pick, providers, udemyLectureRef, pickUdemyCaption, vimeoVideoId, pickVimeoTrack };
 })();

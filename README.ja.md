@@ -154,6 +154,8 @@ voicevox.lan:50443 {
 
 **Udemy（実験的）:** `*.udemy.com` にも対応します。講義ページのプレーヤーに同じ **Dub** ボタンが出ます。Udemy は字幕を独自に描画し、動画に `<track>` 要素を付けないため、プレーヤーが使うのと同じ講義 API に問い合わせ（Udemy にログインし、そのコースを受講している必要があります）、講義に載っている最初の字幕ファイル（WebVTT）を読み込みます。動画の標準の `<track>` 要素はフォールバックとしてだけ使います。講義に字幕がない場合は **Load captions** で SRT/VTT ファイルを読み込んでください。サイト別のコードは `extension/providers.js` にあり、別のサイトに対応するには、そこにアダプターを 1 つ足し、`manifest.json` の `matches` を 1 つ足します。
 
+**Vimeo（実験的）:** Vimeo はすべての動画を `player.vimeo.com` のフレーム内で再生する（vimeo.com でも埋め込み先でも同じ）ため、拡張機能はそのフレーム内で動き、プレーヤーに同じ **Dub** ボタンを出します。字幕ファイルはプレーヤーの設定（`/video/<id>/config`）から読み、自動生成よりも人が作ったトラックを優先します。動画の標準の `<track>` 要素はフォールバックです。実際の Vimeo 動画ではまだ試していません。字幕のない動画では **Load captions** が必要です。再生できるドメインを制限した埋め込み（ドメインレベルのプライバシー）では、設定の取得が拒否されることがあります。
+
 ## 試せる講義の例
 
 この拡張機能は、スライド中心の講義向けです。試せる再生リストを 4 つと、ポッドキャストを 1 本挙げます。
@@ -176,7 +178,7 @@ voicevox.lan:50443 {
 | `extension/asr.js` | ASR 字幕のヘルパー。単語の平坦化、句読点の窓、突き合わせ、文単位の cue |
 | `extension/speakers.js` | 対話用ヘルパー。話者交代の印で字幕を区切り、声を交互に割り当てる |
 | `extension/subtitle.js` | 字幕のページ分割ヘルパー。長い文を数行ずつのページに分ける |
-| `extension/providers.js` | サイト別アダプター（YouTube、Udemy）。動画とプレーヤーの検出、字幕の取得、ページ遷移の検知 |
+| `extension/providers.js` | サイト別アダプター（YouTube、Udemy、Vimeo）。動画とプレーヤーの検出、字幕の取得、ページ遷移の検知 |
 | `extension/content.js` | cue の生成、先読みループ、再生スケジューラ、HUD |
 | `extension/background.js` | サービスワーカー。LLM・VOICEVOX・edge-tts との HTTP ブリッジ |
 | `extension/options.html`, `options.js` | 設定 UI |

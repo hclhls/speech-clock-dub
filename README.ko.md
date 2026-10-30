@@ -154,6 +154,8 @@ voicevox.lan:50443 {
 
 **Udemy(실험적):** `*.udemy.com`도 지원합니다. 강의 페이지의 플레이어에 같은 **Dub** 버튼이 나타납니다. Udemy는 자막을 직접 그리고 동영상에 `<track>` 요소를 붙이지 않으므로, 플레이어가 쓰는 것과 같은 강의 API에 요청해(Udemy에 로그인해 있고 해당 강좌에 등록되어 있어야 합니다) 강의에 나열된 첫 번째 자막 파일(WebVTT)을 불러옵니다. 동영상의 표준 `<track>` 요소는 대체 수단으로만 사용합니다. 강의에 자막이 없으면 **Load captions**로 SRT/VTT 파일을 불러오세요. 사이트별 코드는 `extension/providers.js`에 있으며, 다른 사이트를 지원하려면 거기에 어댑터 하나와 `manifest.json`의 `matches` 하나를 추가하면 됩니다.
 
+**Vimeo(실험적):** Vimeo는 모든 동영상을 `player.vimeo.com` 프레임 안에서 재생하므로(vimeo.com에서도 임베드한 페이지에서도 마찬가지입니다) 확장 프로그램은 그 프레임 안에서 동작하며 플레이어에 같은 **Dub** 버튼을 표시합니다. 자막 파일은 플레이어 설정(`/video/<id>/config`)에서 읽고, 자동 생성보다 사람이 만든 트랙을 우선합니다. 동영상의 표준 `<track>` 요소는 대체 수단입니다. 실제 Vimeo 동영상에서는 아직 시험하지 않았습니다. 자막이 없는 동영상은 **Load captions**가 필요합니다. 재생 가능한 도메인을 제한한 임베드(도메인 수준 개인정보 보호)에서는 설정 요청이 거부될 수 있습니다.
+
 ## 예시 강의
 
 이 확장 프로그램은 슬라이드 위주의 강의를 위해 만들었습니다. 사용해 볼 수 있는 재생목록 네 개와 팟캐스트 한 편입니다.
@@ -176,7 +178,7 @@ voicevox.lan:50443 {
 | `extension/asr.js` | ASR 자막 헬퍼. 단어 평탄화, 구두점 창, 정렬, 문장 단위 cue |
 | `extension/speakers.js` | 대화용 헬퍼. 화자 교대 표시에서 자막을 나누고 음성을 번갈아 배정 |
 | `extension/subtitle.js` | 자막 페이지 나누기 헬퍼. 긴 문장을 몇 줄씩의 페이지로 나눔 |
-| `extension/providers.js` | 사이트별 어댑터(YouTube, Udemy): 동영상·플레이어 탐색, 자막 가져오기, 페이지 이동 감지 |
+| `extension/providers.js` | 사이트별 어댑터(YouTube, Udemy, Vimeo): 동영상·플레이어 탐색, 자막 가져오기, 페이지 이동 감지 |
 | `extension/content.js` | cue 생성, 선행 생성 루프, 재생 스케줄러, HUD |
 | `extension/background.js` | 서비스 워커. LLM, VOICEVOX, edge-tts HTTP 브리지 |
 | `extension/options.html`, `options.js` | 설정 UI |

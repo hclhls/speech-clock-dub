@@ -37,12 +37,42 @@ test('SRT commas and CRLF line endings are accepted', () => {
 });
 
 test('every site the manifest matches has an adapter, and providers.js loads before content.js', () => {
-  const content = manifest.content_scripts.find((cs) => cs.js.includes('content.js'));
-  assert.ok(content.js.indexOf('providers.js') >= 0 && content.js.indexOf('providers.js') < content.js.indexOf('content.js'));
-  for (const m of content.matches) {
-    const hostname = new URL(m.replace('*.', 'www.')).hostname;
-    assert.ok(PROV.providers.some((p) => p.matches({ hostname })), `no adapter for ${m}`);
+  const entries = manifest.content_scripts.filter((cs) => cs.js.includes('content.js'));
+  assert.ok(entries.length >= 2);
+  for (const content of entries) {
+    assert.ok(content.js.indexOf('providers.js') >= 0 && content.js.indexOf('providers.js') < content.js.indexOf('content.js'));
+    for (const m of content.matches) {
+      const hostname = new URL(m.replace('*.', 'www.')).hostname;
+      assert.ok(PROV.providers.some((p) => p.matches({ hostname })), `no adapter for ${m}`);
+    }
   }
+});
+
+test('the Vimeo adapter only runs in player frames, which the manifest covers in all frames', () => {
+  assert.equal(PROV.pick({ hostname: 'player.vimeo.com' }).id, 'vimeo');
+  assert.equal(PROV.pick({ hostname: 'vimeo.com' }).id, 'youtube'); // the page itself has no <video>
+  const entry = manifest.content_scripts.find((cs) => cs.matches.includes('https://player.vimeo.com/*'));
+  assert.equal(entry.all_frames, true);
+  assert.ok(entry.js.includes('content.js'));
+});
+
+test('a Vimeo player address yields the video id', () => {
+  assert.equal(PROV.vimeoVideoId('/video/76979871'), '76979871');
+  assert.equal(PROV.vimeoVideoId('/video/76979871/config'), '76979871');
+  assert.equal(PROV.vimeoVideoId('/'), null);
+});
+
+test('the Vimeo track list prefers human-made captions over auto-generated ones', () => {
+  const tracks = [
+    { lang: 'en-x-autogen', kind: 'subtitles', url: '/texttrack/1.vtt' },
+    { lang: 'en', kind: 'captions', url: '/texttrack/2.vtt' },
+    { lang: 'fr', kind: 'subtitles', url: '/texttrack/3.vtt' },
+    { lang: 'de', kind: 'chapters', url: '/texttrack/4.vtt' },
+  ];
+  assert.equal(PROV.pickVimeoTrack(tracks).url, '/texttrack/2.vtt');
+  assert.equal(PROV.pickVimeoTrack([tracks[0], tracks[3]]).url, '/texttrack/1.vtt'); // only auto-generated left
+  assert.equal(PROV.pickVimeoTrack([{ lang: 'en', kind: 'captions' }]), null); // no file
+  assert.equal(PROV.pickVimeoTrack(undefined), null);
 });
 
 test('a Udemy lecture address yields the course slug and lecture id', () => {

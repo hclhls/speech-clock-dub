@@ -10,7 +10,7 @@
 
 ## Project
 
-Chrome MV3 extension that dubs YouTube (and, experimentally, Udemy) lecture videos (mostly static slides) into Japanese, English,
+Chrome MV3 extension that dubs YouTube (and, experimentally, Udemy and Vimeo) lecture videos (mostly static slides) into Japanese, English,
 Traditional/Simplified Chinese or Korean.
 The synthesized speech is the master clock; the video is the slave. The extension adjusts
 `playbackRate` and pauses/resumes the `<video>` element to follow the speech, never the other way around.
@@ -26,7 +26,7 @@ Pipeline: YouTube captions -> sentence segmentation -> local LLM translation (Op
 - `extension/asr.js` - pure helpers for auto-generated captions (word flattening, LLM punctuation windows, alignment, sentence-based cues)
 - `extension/speakers.js` - pure helpers for dialogue captions (speaker-change markers, alternating voices, LLM speaker labelling)
 - `extension/subtitle.js` - pure helpers that split long subtitle text into pages of a few lines
-- `extension/providers.js` - per-site adapters (YouTube, Udemy): find the video and player, fetch captions, detect navigation; also the SRT/VTT parser
+- `extension/providers.js` - per-site adapters (YouTube, Udemy, Vimeo): find the video and player, fetch captions, detect navigation; also the SRT/VTT parser
 - `extension/content.js` - captions -> cues, production loop, playback scheduler, HUD
 - `extension/background.js` - service worker; bridges to the LLM and TTS HTTP servers
 - `extension/options.html`, `extension/options.js` - settings UI

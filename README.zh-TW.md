@@ -154,6 +154,8 @@ voicevox.lan:50443 {
 
 **Udemy（實驗性）：** 也支援 `*.udemy.com`。在課程頁面的播放器上會出現同樣的 **Dub** 按鈕。Udemy 自行繪製字幕，不會替影片加上 `<track>` 元素，因此擴充功能會請求播放器所用的同一個課程單元 API（需要已登入 Udemy 並已加入該課程），並載入單元中列出的第一個字幕檔（WebVTT）。影片的標準 `<track>` 元素只作為備用。單元沒有字幕時，請用 **Load captions** 載入 SRT/VTT 檔案。站點專用的程式碼在 `extension/providers.js` 中；要支援其他站點，只需在那裡加一個適配器，並在 `manifest.json` 中加一個 `matches`。
 
+**Vimeo（實驗性）：** Vimeo 的所有影片都在 `player.vimeo.com` 框架內播放（vimeo.com 和嵌入它的頁面都一樣），因此擴充功能會在該框架內執行，並在播放器上顯示同樣的 **Dub** 按鈕。字幕檔從播放器設定（`/video/<id>/config`）讀取，優先使用人工製作的軌道而不是自動產生的軌道，影片的標準 `<track>` 元素作為備用。尚未在真實的 Vimeo 影片上測試。沒有字幕的影片需要使用 **Load captions**。限制了可播放網域的嵌入（網域層級隱私）可能會拒絕設定請求。
+
 ## 範例講課影片
 
 這個擴充功能是為以投影片為主的講課影片設計的。以下四個播放清單和一集 Podcast 可以拿來試用：
@@ -176,7 +178,7 @@ voicevox.lan:50443 {
 | `extension/asr.js` | ASR 字幕輔助函式：單字攤平、標點視窗、對齊、以句子為單位的 cue |
 | `extension/speakers.js` | 對話輔助函式：依換人標記切分字幕，並交替分配聲音 |
 | `extension/subtitle.js` | 字幕分頁輔助函式：把較長的文字分成幾行一頁 |
-| `extension/providers.js` | 站點適配器（YouTube、Udemy）：尋找影片與播放器、取得字幕、偵測頁面切換 |
+| `extension/providers.js` | 站點適配器（YouTube、Udemy、Vimeo）：尋找影片與播放器、取得字幕、偵測頁面切換 |
 | `extension/content.js` | cue 的建立、預先生成迴圈、播放排程器、HUD |
 | `extension/background.js` | Service worker；與 LLM、VOICEVOX、edge-tts 的 HTTP 橋接 |
 | `extension/options.html`, `options.js` | 設定介面 |

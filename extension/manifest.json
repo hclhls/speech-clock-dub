@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Speech Clock Dub",
   "version": "0.8.6",
-  "description": "Dubs YouTube and Udemy lecture videos into Japanese, English, Chinese or Korean. The video follows the voice, not the other way around.",
+  "description": "Dubs YouTube, Udemy and Vimeo lecture videos into Japanese, English, Chinese or Korean. The video follows the voice, not the other way around.",
   "icons": { "16": "icons/icon16.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },
   "permissions": ["storage"],
   "host_permissions": ["http://localhost/*", "http://127.0.0.1/*", "https://texttospeech.googleapis.com/*", "https://generativelanguage.googleapis.com/*"],
@@ -26,6 +26,12 @@
     {
       "matches": ["https://www.youtube.com/*", "https://m.youtube.com/*", "https://*.udemy.com/*"],
       "js": ["defaults.js", "asr.js", "speakers.js", "subtitle.js", "providers.js", "content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://player.vimeo.com/*"],
+      "js": ["defaults.js", "asr.js", "speakers.js", "subtitle.js", "providers.js", "content.js"],
+      "all_frames": true,
       "run_at": "document_idle"
     }
   ],
