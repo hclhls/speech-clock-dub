@@ -491,6 +491,26 @@
     }
   }
 
+  // Experimental speech-to-text (see extension/stt.js). The result is kept per video, so toggling the dub
+  // off and on does not transcribe again.
+  const sttCache = new Map();
+  async function transcribeVideo(v) {
+    const key = `${site.videoKey(location)}|${v.currentSrc || v.src}|${S.sttLanguage}|${S.sttModel}`;
+    if (sttCache.has(key)) return sttCache.get(key);
+    const url = YTD_STT.directMediaUrl(v);
+    setStatus('No captions: downloading the audio…');
+    const samples = await YTD_STT.loadSamples(url, { maxMB: S.sttMaxMB, isCancelled: () => state.cancel });
+    const { events, language } = await YTD_STT.transcribeSamples(samples, {
+      send: (wav) => retry(() => sendBg({ type: 'transcribe', wav })),
+      isCancelled: () => state.cancel,
+      onProgress: (i, n) => setStatus(`No captions: transcribing the audio… ${i}/${n}`),
+    });
+    if (!events.length) throw new Error('No speech was found in the audio');
+    const cap = { events, kind: 'manual', languageName: language || 'English', stt: true };
+    sttCache.set(key, cap);
+    return cap;
+  }
+
   async function begin() {
     S = { ...YTD_DEFAULTS, ...(await chrome.storage.sync.get(null)) };
     const v = (state.video = site.findVideo());
@@ -502,13 +522,25 @@
       try {
         cap = await site.fetchCaptions();
       } catch (err) {
-        throw new Error(`${err.message}. Use "Load captions" to supply an SRT/VTT/JSON3 file.`);
+        // Experimental: no captions, so transcribe the audio if the user set that up.
+        if (S.sttMode === 'fallback' && S.sttBaseUrl) {
+          try {
+            cap = await transcribeVideo(v);
+          } catch (sttErr) {
+            if (state.cancel || sttErr.message === 'cancelled') throw sttErr;
+            throw new Error(`${err.message}. Speech-to-text also failed: ${sttErr.message}`);
+          }
+        } else {
+          throw new Error(`${err.message}. Use "Load captions" to supply an SRT/VTT/JSON3 file.`);
+        }
       }
     }
     if (state.cancel) throw new Error('cancelled');
-    state.lang = cap.local
-      ? S.localCaptionLang
-      : (new Intl.DisplayNames(['en'], { type: 'language' }).of(cap.languageCode) ?? 'English');
+    state.lang =
+      cap.languageName ||
+      (cap.local
+        ? S.localCaptionLang
+        : (new Intl.DisplayNames(['en'], { type: 'language' }).of(cap.languageCode) ?? 'English'));
     const cues =
       cap.kind === 'asr' && S.asrPunctuation === 'on' ? await segmentAsr(cap) : buildCues(cap.events, cap.kind);
     if (!cues.length) throw new Error('No usable caption text');

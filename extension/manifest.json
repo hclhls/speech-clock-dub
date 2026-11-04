@@ -25,12 +25,12 @@
     },
     {
       "matches": ["https://www.youtube.com/*", "https://m.youtube.com/*", "https://*.udemy.com/*", "https://www.coursera.org/*"],
-      "js": ["defaults.js", "asr.js", "speakers.js", "subtitle.js", "providers.js", "content.js"],
+      "js": ["defaults.js", "asr.js", "speakers.js", "subtitle.js", "providers.js", "stt.js", "content.js"],
       "run_at": "document_idle"
     },
     {
       "matches": ["https://player.vimeo.com/*", "https://courses.edx.org/*", "https://learning.edx.org/*"],
-      "js": ["defaults.js", "asr.js", "speakers.js", "subtitle.js", "providers.js", "content.js"],
+      "js": ["defaults.js", "asr.js", "speakers.js", "subtitle.js", "providers.js", "stt.js", "content.js"],
       "all_frames": true,
       "run_at": "document_idle"
     }

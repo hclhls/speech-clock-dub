@@ -3,7 +3,7 @@
 Speech Clock Dub is a browser extension that dubs YouTube videos (and, experimentally, Udemy lectures and Vimeo, Coursera and edX videos) using translation and speech services
 that you choose. It has no server of its own, no account system, no analytics and no advertising.
 
-_Last updated: 2026-11-01_
+_Last updated: 2026-11-04_
 
 ## Summary
 
@@ -13,6 +13,8 @@ _Last updated: 2026-11-01_
   configure on its options page. With the default settings these are Google's Gemini API (translation)
   and Google Cloud Text-to-Speech (voice), which need your own API keys. You can instead point it at
   servers on your own computer or network.
+- Only if you turn on the experimental speech-to-text option (off by default) and a video has no captions,
+  the audio of that video is sent to the speech-to-text service whose address you configure.
 - It does not read anything on youtube.com, udemy.com, coursera.org, edx.org or Vimeo's player other than the caption data and the playback state
   of the video you chose to dub.
 
@@ -57,6 +59,7 @@ HTTP(S) to the services you configure on the options page:
 | --- | --- | --- |
 | LLM base URL | Translation, caption punctuation and speaker labelling | `https://generativelanguage.googleapis.com/v1beta/openai` (Google Gemini) |
 | TTS provider | Speech synthesis | Google Cloud Text-to-Speech (`https://texttospeech.googleapis.com`) |
+| Speech-to-text base URL | Transcription of a video without captions (only if `sttMode` is `fallback`; off and empty by default) | none |
 | VOICEVOX URL | Japanese speech synthesis (only if selected) | `http://localhost:50021` |
 | edge-tts bridge URL | Speech synthesis for other languages (only if selected) | `http://127.0.0.1:5050` |
 
@@ -73,6 +76,12 @@ governed by whoever runs them:
   extension to Google Cloud Text-to-Speech and are subject to Google's terms and privacy policy.
 - The optional edge-tts bridge in this repository (`tools/edge_tts_server.py`) forwards the translated
   text to Microsoft's online speech service to synthesize audio. That text is subject to Microsoft's terms.
+- If you turn on speech-to-text, the extension downloads the media file of the video you chose to dub (only
+  when the page offers a plain file, not a stream), decodes its audio in your browser and sends it in short
+  chunks, with your speech-to-text API key if you set one, to the endpoint you configured. That audio is
+  subject to the terms of whoever runs the endpoint (OpenAI, Groq, or your own Whisper server). The file is
+  requested with the cookies the browser would send for that address, and nothing is kept after the dub
+  stops apart from the transcript in the tab's memory.
 - VOICEVOX and a local LLM server run on your own machine and do not send text anywhere on their own.
 
 ## What the extension stores

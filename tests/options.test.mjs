@@ -135,7 +135,7 @@ test('Export file writes every setting except the API keys, and the file can be 
   assert.equal(file.app, 'speech-clock-dub');
   assert.equal(file.settings.targetLang, 'ko');
   assert.equal(file.settings.llmModel, YTD_DEFAULTS.llmModel, 'defaults are written out too');
-  assert.equal(Object.keys(file.settings).length, Object.keys(YTD_DEFAULTS).length - 2, 'all but the two API keys');
+  assert.equal(Object.keys(file.settings).length, Object.keys(YTD_DEFAULTS).filter((k) => !/ApiKey/i.test(k)).length, 'all but the API keys');
   assert.equal(o.exported[0].includes('secret') || o.exported[0].includes('gk'), false, 'no key in the file');
 
   const other = await openOptions({ llmApiKey: 'other-key' });

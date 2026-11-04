@@ -32,6 +32,8 @@ export function loadBackground({ settings = {}, fetchImpl }) {
     },
     btoa,
     atob,
+    FormData,
+    Blob,
     URL,
     AbortSignal,
     console,
@@ -79,4 +81,11 @@ export function loadProviders() {
   const context = vm.createContext({ URLSearchParams });
   vm.runInContext(fs.readFileSync(path.join(EXT, 'providers.js'), 'utf8'), context);
   return vm.runInContext('YTD_PROV', context);
+}
+
+/** Evaluates extension/stt.js and returns its YTD_STT helpers. */
+export function loadStt() {
+  const context = vm.createContext({ btoa, Intl });
+  vm.runInContext(fs.readFileSync(path.join(EXT, 'stt.js'), 'utf8'), context);
+  return vm.runInContext('YTD_STT', context);
 }

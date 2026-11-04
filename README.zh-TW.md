@@ -156,6 +156,20 @@ voicevox.lan:50443 {
 
 播放器中的 **Sub** 按鈕會依序切換 `off` -> `translated` -> `both`（譯文加原文）。選擇會儲存在 `subtitles` 設定中（預設 `off`）。正在朗讀的 cue 的文字會顯示在播放器下方，cue 之間會隱藏；使用者暫停時則維持顯示。字體大小會隨播放器寬度縮放，所以全螢幕也適用。它顯示在 YouTube 自己的字幕列上方，因此就算開啟了 YouTube 字幕也不會重疊。 較長的句子會分成每頁最多 `subtitleMaxLines` 行（預設 2，`0` 表示不限制）的頁面顯示，頁面會隨語音的進度切換，因此字幕不會大面積遮住影片。在 `both` 模式下，譯文與原文各自分開限制。
 
+## 無字幕影片的語音辨識（實驗性）
+
+影片完全沒有字幕時，可以把音訊轉成文字。預設為關閉。請在選項頁面把 `sttMode` 設為 `fallback`，並把 `sttBaseUrl` 指向提供
+`POST {sttBaseUrl}/audio/transcriptions` 的 OpenAI 相容端點（OpenAI API、Groq、`whisper.cpp` 伺服器、faster-whisper-server 等）。
+同時設定 `sttModel`（預設 `whisper-1`），需要的話也設定 `sttApiKey`。若已知說話的語言，請設定 `sttLanguage`（如 `en` 的 ISO 代碼）；留空則由模型判斷。
+
+運作方式：只有在找不到字幕時，才會下載影片的媒體檔，在瀏覽器中解碼音訊，切成每 5 分鐘一段的 16 kHz 單聲道 WAV（靜音的段落不會送出），
+再逐段傳送。傳回的帶時間的片段會當作一般字幕事件處理，因此翻譯與配音照常運作。會先轉寫整部影片（進度顯示在 HUD），結果在分頁開啟期間會保留，
+所以開關配音不會重新轉寫。**影片的音訊會傳送到你設定的端點。**
+
+限制：只有在頁面播放的是一般媒體檔（可取得的 `.mp4`、`.webm`、`.mp3` 網址）時才能使用，部分 Coursera、edX 和 Vimeo 影片屬於此類。串流影片（`blob:`、HLS、DASH，
+包括 YouTube 與 Udemy）會顯示訊息並拒絕，請改用 **Load captions**。整個檔案會在記憶體中解碼，所以超過 `sttMaxMB`（預設 200）的檔案會被拒絕；實用上限約為一小時的課程。
+除了模型本身寫出的標點之外，不會再做標點修正。尚未在真實的課程網站上測試過。
+
 ## 安裝（開發用）
 
 1. Chrome：開啟 `chrome://extensions`，啟用「開發人員模式」，按下「載入未封裝項目」，選擇 `extension/`。
@@ -197,6 +211,7 @@ voicevox.lan:50443 {
 | `extension/speakers.js` | 對話輔助函式：依換人標記切分字幕，並交替分配聲音 |
 | `extension/subtitle.js` | 字幕分頁輔助函式：把較長的文字分成幾行一頁 |
 | `extension/providers.js` | 站點適配器（YouTube、Udemy、Vimeo、Coursera、edX）：尋找影片與播放器、取得字幕、偵測頁面切換 |
+| `extension/stt.js` | 無字幕影片的語音辨識（實驗性）：下載媒體檔、WAV 分段、把 Whisper 片段轉成字幕事件 |
 | `extension/content.js` | cue 的建立、預先生成迴圈、播放排程器、HUD |
 | `extension/background.js` | Service worker；與 LLM、VOICEVOX、edge-tts 的 HTTP 橋接 |
 | `extension/options.html`, `options.js` | 設定介面 |
