@@ -29,6 +29,36 @@ async function translate({ text, prev, sourceLang }) {
   return chat(s, prompt, { temperature: 0.2, maxTokens: 512 });
 }
 
+// Speech-to-text for one audio chunk (a base64 WAV): an OpenAI-compatible /audio/transcriptions call.
+// Returns the timed segments and the language the server detected.
+async function transcribe({ wav }) {
+  const s = await getSettings();
+  if (!s.sttBaseUrl) throw new Error('sttBaseUrl is empty: set a speech-to-text endpoint in the options page');
+  const bin = atob(wav);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  const form = new FormData();
+  form.append('file', new Blob([bytes], { type: 'audio/wav' }), 'audio.wav');
+  form.append('model', s.sttModel);
+  form.append('response_format', 'verbose_json');
+  form.append('temperature', '0');
+  if (s.sttLanguage) form.append('language', s.sttLanguage);
+  const res = await fetch(`${s.sttBaseUrl.replace(/\/$/, '')}/audio/transcriptions`, {
+    method: 'POST',
+    headers: s.sttApiKey ? { Authorization: `Bearer ${s.sttApiKey}` } : {},
+    body: form,
+    signal: AbortSignal.timeout(s.sttTimeoutSec * 1000),
+  });
+  if (!res.ok) throw new Error(`STT HTTP ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  const json = await res.json();
+  let segments = Array.isArray(json.segments)
+    ? json.segments.map((g) => ({ start: g.start, end: g.end, text: g.text, no_speech_prob: g.no_speech_prob }))
+    : [];
+  // Some servers answer with the plain text only: use it as one segment over the whole chunk.
+  if (!segments.length && json.text?.trim()) segments = [{ start: 0, end: Number(json.duration) || bytes.length / 32000, text: json.text }];
+  return { segments, language: json.language ?? '' };
+}
+
 // Restores punctuation and capitalization in a window of ASR words (see extension/asr.js).
 async function punctuate({ text, sourceLang }) {
   const s = await getSettings();
@@ -169,17 +199,11 @@ function toBase64(buf) {
   return btoa(bin);
 }
 
+const HANDLERS = { translate, transcribe, punctuate, label: labelSpeakers, synthesize };
+
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-  const job =
-    msg.type === 'translate'
-      ? translate(msg)
-      : msg.type === 'punctuate'
-        ? punctuate(msg)
-        : msg.type === 'label'
-          ? labelSpeakers(msg)
-          : msg.type === 'synthesize'
-            ? synthesize(msg)
-            : null;
+  const handler = Object.hasOwn(HANDLERS, msg?.type) ? HANDLERS[msg.type] : null;
+  const job = handler ? handler(msg) : null;
   if (!job) return false;
   job.then(
     (result) => sendResponse({ ok: true, result }),

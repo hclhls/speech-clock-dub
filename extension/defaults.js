@@ -143,6 +143,18 @@ const YTD_DEFAULTS = {
   googleVoice: '',
   googleSpeed: 1.15, // speakingRate, 0.25 to 4
 
+  // Experimental: speech-to-text for videos without captions. 'fallback' transcribes the audio when no
+  // captions can be found; 'off' never does. It works only for videos that are a plain media file (mp4,
+  // webm ...), not for streams. The audio is sent to sttBaseUrl, an OpenAI-compatible endpoint with
+  // /audio/transcriptions (OpenAI, Groq, whisper.cpp server, faster-whisper-server ...). Empty = unusable.
+  sttMode: 'off', // 'off' | 'fallback'
+  sttBaseUrl: '', // e.g. 'http://127.0.0.1:8080/v1'
+  sttModel: 'whisper-1',
+  sttApiKey: '',
+  sttLanguage: '', // spoken language as an ISO code such as 'en'; empty = detect
+  sttTimeoutSec: 300, // per audio chunk
+  sttMaxMB: 200, // larger media files are refused (the whole file is decoded in memory)
+
   // Language name given to the LLM when captions come from a local file.
   localCaptionLang: 'English',
 
@@ -199,7 +211,7 @@ const YTD_MANIFEST_HOSTS = ['texttospeech.googleapis.com', 'generativelanguage.g
 
 function ytdRemoteOrigins(settings) {
   const origins = new Set();
-  for (const key of ['llmBaseUrl', 'voicevoxUrl', 'edgeUrl']) {
+  for (const key of ['llmBaseUrl', 'voicevoxUrl', 'edgeUrl', 'sttBaseUrl']) {
     let url;
     try {
       url = new URL(settings[key]);

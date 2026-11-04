@@ -226,6 +226,28 @@ spoken is shown near the bottom of the player and hidden between cues, while pau
 stays visible. The font scales with the player width, so it also works in fullscreen. It sits above
 YouTube's own caption line, so it does not overlap if YouTube captions are switched on. Long sentences are shown in pages of at most `subtitleMaxLines` lines (default 2; `0` means no limit), which advance with the speech, so the overlay never covers more of the video than that. In `both` mode the translation and the original are limited separately.
 
+## Speech-to-text for videos without captions (experimental)
+
+When a video has no captions at all, the extension can transcribe its audio. It is off by default. Set
+`sttMode` to `fallback` and `sttBaseUrl` to an OpenAI-compatible endpoint that serves
+`POST {sttBaseUrl}/audio/transcriptions` (the OpenAI API, Groq, a `whisper.cpp` server, faster-whisper-server ...)
+in the options page, plus `sttModel` (default `whisper-1`) and, if the service needs one, `sttApiKey`. Set
+`sttLanguage` (an ISO code such as `en`) when the spoken language is known; empty means the model detects it.
+
+How it works: only if no captions can be found, the extension downloads the video's media file, decodes
+the audio in the browser, cuts it into 5-minute 16 kHz mono WAV chunks (silent chunks are skipped) and sends
+them one by one. The timed segments that come back become ordinary caption events, so translation and
+dubbing work as usual. The whole video is transcribed first (the HUD shows the progress), and the result is
+kept while the tab stays open, so toggling the dub does not transcribe again. **The audio of the video
+is sent to the endpoint you configure.**
+
+Limits: it works only when the page plays a plain media file (an `.mp4`, `.webm` or `.mp3` URL that the
+page may fetch), as on some Coursera, edX and Vimeo videos. Streamed videos (`blob:` sources, HLS, DASH),
+which includes YouTube and Udemy, are refused with a message; use **Load captions** for them. The whole file
+is decoded in memory, so files larger than `sttMaxMB` (default 200) are refused; a lecture of about an hour
+is the practical limit. Transcripts are not punctuation-corrected beyond what the model writes. This has not
+been tested against a real course site yet.
+
 ## Install (development)
 
 1. Open `chrome://extensions`, enable Developer mode, click "Load unpacked", select `extension/`.
@@ -284,6 +306,7 @@ Videos with manual captions work better. The videos are not part of this project
 | `extension/speakers.js` | Dialogue helpers: splitting captions at speaker-change markers and alternating voices |
 | `extension/subtitle.js` | Subtitle paging helpers: splitting long text into pages of a few lines |
 | `extension/providers.js` | Per-site adapters (YouTube, Udemy, Vimeo, Coursera, edX): video and player lookup, caption fetching, navigation detection |
+| `extension/stt.js` | Experimental speech-to-text for videos without captions: media download, WAV chunks, Whisper segments to caption events |
 | `extension/content.js` | Cue building, production loop, playback scheduler, HUD |
 | `extension/background.js` | Service worker; LLM, VOICEVOX and edge-tts HTTP bridge |
 | `extension/options.html`, `options.js` | Settings UI |

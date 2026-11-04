@@ -156,6 +156,23 @@ voicevox.lan:50443 {
 
 플레이어의 **Sub** 버튼을 누르면 `off` -> `translated` -> `both`(번역 + 원문) 순으로 바뀝니다. 선택은 `subtitles` 설정(기본값 `off`)에 저장됩니다. 지금 말하고 있는 cue의 텍스트가 플레이어 아래쪽에 표시되고 cue 사이에는 숨겨지며, 사용자가 일시정지한 동안에는 계속 보입니다. 글꼴은 플레이어 너비에 맞춰 조절되므로 전체 화면에서도 사용할 수 있습니다. YouTube 자체 자막 줄보다 위에 표시되므로 YouTube 자막을 켜도 겹치지 않습니다. 긴 문장은 최대 `subtitleMaxLines`줄(기본값 2, `0`이면 제한 없음)씩 페이지로 나눠 표시되며, 페이지는 음성의 진행에 맞춰 넘어갑니다. 그래서 자막이 영상을 크게 가리지 않습니다. `both`에서는 번역과 원문을 각각 따로 제한합니다.
 
+## 자막 없는 동영상의 음성 인식(실험적)
+
+자막이 전혀 없는 동영상은 음성을 받아 적을 수 있습니다. 기본값은 꺼짐입니다. 옵션 페이지에서 `sttMode`를 `fallback`으로 하고,
+`sttBaseUrl`에 `POST {sttBaseUrl}/audio/transcriptions`를 제공하는 OpenAI 호환 엔드포인트(OpenAI API, Groq, `whisper.cpp` 서버,
+faster-whisper-server 등)를 지정하세요. `sttModel`(기본값 `whisper-1`)과 필요하면 `sttApiKey`도 설정합니다. 말하는 언어를 알고 있다면
+`sttLanguage`(`en` 같은 ISO 코드)를 설정하세요. 비워 두면 모델이 판별합니다.
+
+동작 방식: 자막을 찾지 못했을 때만 동영상의 미디어 파일을 내려받아 브라우저에서 오디오를 디코딩하고, 5분 단위의 16 kHz 모노 WAV로
+나누어(무음 구간은 보내지 않습니다) 하나씩 전송합니다. 돌아온 시간 정보가 있는 세그먼트는 일반 자막 이벤트가 되므로 번역과 더빙은 평소처럼
+동작합니다. 동영상 전체를 먼저 받아 적고(진행 상황은 HUD에 표시됩니다), 결과는 탭이 열려 있는 동안 보관되므로 더빙을 껐다 켜도 다시 받아
+적지 않습니다. **동영상의 음성은 설정한 엔드포인트로 전송됩니다.**
+
+제한: 페이지가 일반 미디어 파일(가져올 수 있는 `.mp4`, `.webm`, `.mp3` URL)을 재생할 때만 동작합니다. Coursera, edX, Vimeo의 일부 동영상이
+해당합니다. 스트리밍 동영상(`blob:`, HLS, DASH. YouTube와 Udemy 포함)은 메시지를 보여 주고 거절합니다. 그 경우에는 **Load captions**를 쓰세요.
+파일 전체를 메모리에서 디코딩하므로 `sttMaxMB`(기본값 200)를 넘는 파일은 거절합니다. 실용적인 한계는 1시간 정도의 강의입니다. 모델이 쓴 것
+이상의 문장부호 보정은 하지 않습니다. 실제 강의 사이트에서는 아직 시험하지 않았습니다.
+
 ## 설치(개발용)
 
 1. Chrome: `chrome://extensions`를 열고 개발자 모드를 켠 뒤 "압축해제된 확장 프로그램을 로드합니다"를 눌러 `extension/`을 선택합니다.
@@ -197,6 +214,7 @@ voicevox.lan:50443 {
 | `extension/speakers.js` | 대화용 헬퍼. 화자 교대 표시에서 자막을 나누고 음성을 번갈아 배정 |
 | `extension/subtitle.js` | 자막 페이지 나누기 헬퍼. 긴 문장을 몇 줄씩의 페이지로 나눔 |
 | `extension/providers.js` | 사이트별 어댑터(YouTube, Udemy, Vimeo, Coursera, edX): 동영상·플레이어 탐색, 자막 가져오기, 페이지 이동 감지 |
+| `extension/stt.js` | 자막 없는 동영상의 음성 인식(실험적): 미디어 다운로드, WAV 청크, Whisper 세그먼트를 자막 이벤트로 변환 |
 | `extension/content.js` | cue 생성, 선행 생성 루프, 재생 스케줄러, HUD |
 | `extension/background.js` | 서비스 워커. LLM, VOICEVOX, edge-tts HTTP 브리지 |
 | `extension/options.html`, `options.js` | 설정 UI |

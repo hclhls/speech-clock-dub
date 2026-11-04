@@ -6,6 +6,7 @@ const GROUPS = [
   ['Voice details', ['ttsSpeed', 'googleVoice', 'googleSpeed', 'edgeVoice', 'edgeRate', 'speakerFemale', 'speakerMale',
     'voice1Provider', 'voice1Voice', 'voice2Provider', 'voice2Voice']],
   ['Servers and models', ['llmBaseUrl', 'llmModel', 'llmExtraBody', 'llmTimeoutSec', 'voicevoxUrl', 'edgeUrl']],
+  ['Speech-to-text (experimental)', ['sttMode', 'sttBaseUrl', 'sttModel', 'sttApiKey', 'sttLanguage', 'sttTimeoutSec', 'sttMaxMB']],
   ['Captions and subtitles', ['subtitleMaxLines', 'localCaptionLang', 'asrPunctuation', 'asrWindowWords',
     'asrStrideWords', 'asrConcurrency', 'contextCues', 'maxGapSec', 'maxCueChars']],
   ['Buffering and video speed', ['lowWaterSec', 'highWaterSec', 'targetAheadSec', 'concurrency', 'minRate', 'maxRate', 'gapRate']],
@@ -17,6 +18,7 @@ const CHOICES = {
   targetLang: Object.keys(YTD_LANGS),
   voiceGender: ['female', 'male'],
   translationLevel: ['standard', 'easy', 'advanced'],
+  sttMode: ['off', 'fallback'],
   speakerVoices: ['off', 'alternate', 'llm'],
   subtitles: ['off', 'translated', 'both'],
   asrPunctuation: ['on', 'off'],
@@ -271,7 +273,7 @@ importFile.addEventListener('change', async () => {
   }
   // The shared API keys stay in the form, so a file must not move a server URL unnoticed.
   const current = readForm();
-  const moved = ['llmBaseUrl', 'voicevoxUrl', 'edgeUrl'].filter((key) => key in kept && kept[key] !== current[key]);
+  const moved = ['llmBaseUrl', 'voicevoxUrl', 'edgeUrl', 'sttBaseUrl'].filter((key) => key in kept && kept[key] !== current[key]);
   fillForm(kept);
   if (typeof data.name === 'string') nameInput.value = data.name.slice(0, MAX_NAME);
   loadedProfile = '';
